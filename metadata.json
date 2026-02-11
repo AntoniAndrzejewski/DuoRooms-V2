@@ -1,0 +1,8 @@
+{
+  "name": "Duo Rooms V.2",
+  "description": "A collaborative online space for private rooms, featuring Telegram-style chat, interactive games like Chess and Tic-Tac-Toe, and shared media experiences with a focus on high-quality UI/UX and multi-language support.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

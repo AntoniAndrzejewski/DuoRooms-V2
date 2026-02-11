@@ -1,0 +1,45 @@
+
+DUO ROOMS - FLUTTER ARCHITECTURE GUIDE
+
+1. Recommended Packages:
+   - firebase_core, firebase_auth, cloud_firestore (Infrastructure)
+   - riverpod or flutter_bloc (State Management)
+   - go_router (Deep Linking for room invites)
+   - chess (Game Logic)
+   - flutter_chess_board (Game UI)
+   - easy_localization (Multi-language)
+   - youtube_player_flutter (Media Share)
+   - flutter_chat_ui (Telegram-like Chat)
+
+2. Project Structure:
+   lib/
+   ├── core/
+   │   ├── theme/          # Custom themes (Romantic, Business, etc.)
+   │   ├── l10n/           # ARB files for EN, RU, PL, FR, ES
+   │   └── constants/
+   ├── features/
+   │   ├── auth/           # Login & Onboarding
+   │   ├── lobby/          # Theme selection & Public rooms
+   │   ├── room/           # Main logic (Firestore StreamBuilder)
+   │   │   ├── chat/
+   │   │   ├── games/
+   │   │   └── waiting_room/
+   │   └── profile/
+   └── main.dart
+
+3. Real-time Sync Logic (Firestore):
+   Room Document Structure:
+   rooms/{roomId} {
+     theme: "romantic",
+     ownerId: "uuid",
+     activity: "chess",
+     participants: [ {id, name, gender, isHost} ],
+     waitingRoom: [ {id, name} ],
+     gameState: { ...json },
+     messages: subcollection()
+   }
+
+4. Pro Tips for "Duolingo style":
+   - Use 'Rive' for high-quality vector animations in games.
+   - Use 'HapticFeedback' on every move.
+   - Use 'AudioPlayers' for cheerful success/failure sounds.
