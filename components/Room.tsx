@@ -1,10 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { RoomState, User, ActivityType, Message, RoomTheme } from '../types';
-import { Share2, Send, Paperclip, Gamepad2, Users, Settings, LogOut, MessageSquare, Crown, ShieldAlert, X, Check, Search, MonitorPlay, Scissors, Radio } from 'lucide-react';
+import { Share2, Send, Paperclip, Gamepad2, Users, Settings, LogOut, MessageSquare, Crown, ShieldAlert, X, Check, Search, MonitorPlay, Scissors, Radio, Volume2, Play, Pause, Waves, Music } from 'lucide-react';
 import ChessGame from './games/ChessGame';
 import RPSGame from './games/RPSGame';
-import RadioPlayer from './media/RadioPlayer';
+
+const RADIO_STATIONS = [
+  { id: 'lofi', name: 'Lofi Hip-Hop', url: 'https://stream.laut.fm/lofi', color: 'bg-purple-500', icon: '🎧' },
+  { id: 'chillhop', name: 'Chillhop / Jazz', url: 'https://streams.fluxfm.de/Chillhop/mp3-128/', color: 'bg-amber-500', icon: '☕' },
+  { id: 'ambient', name: 'Deep Focus / Ambient', url: 'https://stream.laut.fm/study', color: 'bg-indigo-500', icon: '📚' }
+];
 
 interface ChatSectionProps {
   t: any;
@@ -99,6 +104,87 @@ const ChatSection: React.FC<ChatSectionProps> = ({
   );
 };
 
+interface RadioSectionProps {
+  t: any;
+  currentStation: typeof RADIO_STATIONS[0];
+  setCurrentStation: (s: typeof RADIO_STATIONS[0]) => void;
+  isPlaying: boolean;
+  setIsPlaying: (p: boolean) => void;
+  volume: number;
+  setVolume: (v: number) => void;
+  isLoading: boolean;
+}
+
+const RadioSection: React.FC<RadioSectionProps> = ({ 
+    t, currentStation, setCurrentStation, isPlaying, setIsPlaying, volume, setVolume, isLoading 
+}) => {
+    return (
+        <div className="flex flex-col h-full overflow-hidden animate-in slide-in-from-left duration-300">
+            <div className="p-6 border-b border-black/5 bg-white/10 flex items-center justify-between">
+                <h3 className="font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                    <Radio className="w-4 h-4" /> {t.radio}
+                </h3>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-8">
+                {/* Visualizer & Info */}
+                <div className="flex flex-col items-center gap-6 py-4">
+                    <div className={`relative w-32 h-32 rounded-full ${currentStation.color} flex items-center justify-center shadow-xl transition-all duration-700 ${isPlaying ? 'scale-110' : 'scale-100'}`}>
+                        <div className="text-5xl">{currentStation.icon}</div>
+                        {isPlaying && <div className="absolute inset-0 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>}
+                    </div>
+                    
+                    <div className="text-center">
+                        <p className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-1">{isPlaying ? t.playing : t.paused}</p>
+                        <h4 className="text-lg font-black text-slate-800 leading-tight">{currentStation.name}</h4>
+                    </div>
+
+                    <button 
+                        onClick={() => setIsPlaying(!isPlaying)}
+                        disabled={isLoading}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90 ${isPlaying ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}
+                    >
+                        {isLoading ? <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-900 rounded-full animate-spin"></div> : (isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current translate-x-0.5" />)}
+                    </button>
+                </div>
+
+                {/* Volume */}
+                <div className="space-y-3 bg-white/40 p-4 rounded-2xl border border-white/40 shadow-sm">
+                    <div className="flex justify-between items-center text-[10px] font-black opacity-40 uppercase tracking-widest">
+                        <div className="flex items-center gap-2"><Volume2 className="w-3 h-3" /> {t.volume}</div>
+                        <span>{Math.round(volume * 100)}%</span>
+                    </div>
+                    <input 
+                        type="range" min="0" max="1" step="0.01" value={volume} 
+                        onChange={(e) => setVolume(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-900"
+                    />
+                </div>
+
+                {/* Station List */}
+                <div className="space-y-4">
+                    <p className="text-[10px] font-black opacity-30 uppercase tracking-widest ml-1">{t.stations}</p>
+                    <div className="space-y-2">
+                        {RADIO_STATIONS.map((station) => (
+                            <button
+                                key={station.id}
+                                onClick={() => setCurrentStation(station)}
+                                className={`w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${currentStation.id === station.id ? 'bg-white border-black/5 shadow-md' : 'bg-black/5 border-transparent opacity-60 hover:opacity-100'}`}
+                            >
+                                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm">{station.icon}</div>
+                                <div className="text-left flex-1 min-w-0">
+                                    <p className="font-bold text-slate-800 text-xs truncate">{station.name}</p>
+                                </div>
+                                {currentStation.id === station.id && isPlaying && <Waves className="w-4 h-4 text-indigo-500 animate-pulse" />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 interface RoomProps {
   t: any;
   room: RoomState;
@@ -108,9 +194,17 @@ interface RoomProps {
 }
 
 const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
-  const [activeTab, setActiveTab] = useState<'main' | 'chat' | 'participants'>('main');
+  const [activeTab, setActiveTab] = useState<'main' | 'chat' | 'participants' | 'radio'>('main');
   const [chatInput, setChatInput] = useState('');
   const [showInviteToast, setShowInviteToast] = useState(false);
+  
+  // Persistent Radio State
+  const [currentStation, setCurrentStation] = useState(RADIO_STATIONS[0]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+  const [isLoading, setIsLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -121,6 +215,29 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
     [RoomTheme.BUSINESS]: 'business-theme bg-slate-50',
     [RoomTheme.FRIENDLY]: 'friendly-theme bg-yellow-50',
   };
+
+  // Radio Audio Controller
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+        setIsLoading(true);
+        audioRef.current.play()
+            .then(() => setIsLoading(false))
+            .catch(err => {
+                console.error("Playback error:", err);
+                setIsPlaying(false);
+                setIsLoading(false);
+            });
+    } else {
+        audioRef.current.pause();
+    }
+  }, [isPlaying, currentStation.url]);
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
@@ -174,6 +291,9 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
 
   return (
     <div className={`flex flex-col h-screen overflow-hidden ${themeClasses[room.theme]}`}>
+      {/* Persistent Audio Tag */}
+      <audio ref={audioRef} src={currentStation.url} preload="none" />
+
       {showInviteToast && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl z-[100] animate-bounce">
           Link copied!
@@ -211,29 +331,26 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
         {/* Navigation Sidebar */}
         <nav className="w-20 border-r border-black/5 flex flex-col items-center py-8 gap-8 bg-black/5 z-10">
           <button onClick={() => setActiveTab('main')} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${activeTab === 'main' ? 'bg-white shadow-xl text-slate-900 scale-110' : 'text-slate-500'}`}><Gamepad2 className="w-7 h-7" /></button>
-          <button onClick={() => setActiveTab('chat')} className={`lg:hidden w-12 h-12 rounded-2xl flex items-center justify-center transition-all relative ${activeTab === 'chat' ? 'bg-white shadow-xl text-slate-900 scale-110' : 'text-slate-500'}`}><MessageSquare className="w-7 h-7" />{room.messages.length > 0 && activeTab !== 'chat' && <div className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-100"></div>}</button>
+          <button onClick={() => setActiveTab('chat')} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all relative ${activeTab === 'chat' ? 'bg-white shadow-xl text-slate-900 scale-110' : 'text-slate-500'}`}><MessageSquare className="w-7 h-7" />{room.messages.length > 0 && activeTab !== 'chat' && <div className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-100"></div>}</button>
+          <button onClick={() => setActiveTab('radio')} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all relative ${activeTab === 'radio' ? 'bg-white shadow-xl text-slate-900 scale-110' : 'text-slate-500'}`}><Radio className="w-7 h-7" />{isPlaying && <div className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>}</button>
           <button onClick={() => setActiveTab('participants')} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all relative ${activeTab === 'participants' ? 'bg-white shadow-xl text-slate-900 scale-110' : 'text-slate-500'}`}><Users className="w-7 h-7" />{room.waitingRoom.length > 0 && <div className="absolute top-1 right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-slate-100"></div>}</button>
           <div className="mt-auto"><button className="w-12 h-12 rounded-2xl text-slate-500 hover:text-slate-900 flex items-center justify-center"><Settings className="w-7 h-7" /></button></div>
         </nav>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Chat Sidebar */}
-          <aside className={`flex-col bg-white/30 backdrop-blur-sm border-r border-black/5 transition-all duration-300 w-full lg:w-96 ${activeTab === 'chat' ? 'flex' : 'hidden lg:flex'}`}>
-            <ChatSection 
-              t={t} 
-              room={room} 
-              user={user} 
-              chatInput={chatInput} 
-              setChatInput={setChatInput} 
-              handleSendMessage={handleSendMessage} 
-              chatEndRef={chatEndRef}
-              chatContainerRef={chatContainerRef}
-            />
+          {/* Sidebar Section (Chat / Radio / Participants) */}
+          <aside className={`flex-col bg-white/30 backdrop-blur-sm border-r border-black/5 transition-all duration-300 w-full lg:w-96 ${activeTab !== 'main' ? 'flex' : 'hidden lg:flex'}`}>
+            {activeTab === 'chat' || (activeTab === 'main' && window.innerWidth >= 1024) ? (
+                <ChatSection t={t} room={room} user={user} chatInput={chatInput} setChatInput={setChatInput} handleSendMessage={handleSendMessage} chatEndRef={chatEndRef} chatContainerRef={chatContainerRef} />
+            ) : activeTab === 'radio' ? (
+                <RadioSection t={t} currentStation={currentStation} setCurrentStation={setCurrentStation} isPlaying={isPlaying} setIsPlaying={setIsPlaying} volume={volume} setVolume={setVolume} isLoading={isLoading} />
+            ) : activeTab === 'participants' ? (
+                <div className="p-8"><h3 className="text-xl font-black mb-6">{t.participants}</h3><div className="space-y-3">{room.participants.map(p => (<div key={p.id} className="bg-white/40 p-4 rounded-2xl flex items-center justify-between"><div className="flex items-center gap-3"><span className="text-2xl">{p.avatar}</span><span className="font-bold">{p.name}</span></div>{p.isOwner && <Crown className="w-4 h-4 text-yellow-500" />}</div>))}</div></div>
+            ) : null}
           </aside>
 
-          {/* Main Content Area */}
-          <main className={`flex-1 flex flex-col min-0 bg-transparent relative overflow-y-auto ${activeTab === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
-            {activeTab !== 'participants' ? (
+          {/* Main Activity Area */}
+          <main className={`flex-1 flex flex-col min-0 bg-transparent relative overflow-y-auto ${activeTab !== 'main' ? 'hidden lg:flex' : 'flex'}`}>
               <div className="flex-1 flex flex-col animate-in fade-in duration-500">
                 {room.currentActivity === ActivityType.LOBBY ? (
                   <div className="flex-1 flex flex-col items-center justify-center p-8">
@@ -241,11 +358,10 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
                           <h2 className="text-3xl md:text-4xl font-black opacity-80">{t.activities}</h2>
                           <p className="text-sm font-medium opacity-50">Collaborate or compete in real-time</p>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 w-full max-w-6xl">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-5xl">
                           {[
                             { id: ActivityType.CHESS, label: t.chess, icon: '♟️', color: 'bg-amber-500' }, 
                             { id: ActivityType.ROCK_PAPER_SCISSORS, label: t.rps, icon: '✊', color: 'bg-indigo-500' },
-                            { id: ActivityType.RADIO, label: t.radio, icon: '📻', color: 'bg-emerald-500' },
                             { id: ActivityType.TIC_TAC_TOE, label: t.tictactoe, icon: '❌', color: 'bg-blue-500' }, 
                             { id: ActivityType.YOUTUBE, label: t.youtube, icon: '📺', color: 'bg-red-500' }
                           ].map((act) => (
@@ -258,28 +374,9 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
                       </div>
                   </div>
                 ) : room.currentActivity === ActivityType.CHESS ? (
-                  <ChessGame 
-                    t={t} 
-                    onClose={() => setActivity(ActivityType.LOBBY)}
-                    isOwner={isHost} 
-                    theme={room.theme} 
-                    player1={user}
-                    player2={room.participants.find(p => p.id !== user.id)}
-                  />
+                  <ChessGame t={t} onClose={() => setActivity(ActivityType.LOBBY)} isOwner={isHost} theme={room.theme} player1={user} player2={room.participants.find(p => p.id !== user.id)} />
                 ) : room.currentActivity === ActivityType.ROCK_PAPER_SCISSORS ? (
-                  <RPSGame 
-                    t={t}
-                    onClose={() => setActivity(ActivityType.LOBBY)}
-                    theme={room.theme}
-                    player1={user}
-                    player2={room.participants.find(p => p.id !== user.id)}
-                  />
-                ) : room.currentActivity === ActivityType.RADIO ? (
-                  <RadioPlayer 
-                    t={t}
-                    onClose={() => setActivity(ActivityType.LOBBY)}
-                    theme={room.theme}
-                  />
+                  <RPSGame t={t} onClose={() => setActivity(ActivityType.LOBBY)} theme={room.theme} player1={user} player2={room.participants.find(p => p.id !== user.id)} />
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center opacity-40">
                       <MonitorPlay className="w-20 h-20 mb-4" />
@@ -288,50 +385,6 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="flex-1 p-8 max-w-2xl mx-auto w-full animate-in slide-in-from-right duration-300">
-                <div className="space-y-8">
-                  <div>
-                    <h3 className="text-2xl font-black mb-6 flex items-center gap-3"><Users className="w-7 h-7" /> {t.participants}</h3>
-                    <div className="space-y-3">
-                      {room.participants.map(p => (
-                        <div key={p.id} className="flex items-center justify-between bg-white/40 p-5 rounded-[30px] border border-black/5 shadow-sm">
-                          <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-md relative">
-                              {p.avatar}
-                              {p.isOwner && <Crown className="absolute -top-2 -right-2 w-6 h-6 text-yellow-500 drop-shadow-md" />}
-                            </div>
-                            <div>
-                              <p className="font-black text-lg">{p.name}</p>
-                              <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">{p.isOwner ? 'Host' : 'Member'}</p>
-                            </div>
-                          </div>
-                          {isHost && !p.isOwner && (
-                            <button onClick={() => kickUser(p.id)} className="p-3 text-red-500 hover:bg-red-50 rounded-2xl transition-colors"><ShieldAlert className="w-6 h-6" /></button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {isHost && room.waitingRoom.length > 0 && (
-                    <div>
-                      <h3 className="text-xl font-black mb-6 text-blue-600 flex items-center gap-3"><ShieldAlert className="w-6 h-6" /> {t.waitingRoom}</h3>
-                      <div className="space-y-3">
-                        {room.waitingRoom.map(p => (
-                          <div key={p.id} className="flex items-center justify-between bg-blue-50/50 p-5 rounded-[30px] border border-blue-100 shadow-sm animate-pulse">
-                            <div className="flex items-center gap-4"><div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl">{p.avatar}</div><p className="font-bold">{p.name}</p></div>
-                            <div className="flex gap-2">
-                              <button onClick={() => approveUser(p.id)} className="p-3 bg-green-500 text-white rounded-2xl hover:bg-green-600 transition-all"><Check className="w-5 h-5" /></button>
-                              <button className="p-3 bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-all"><X className="w-5 h-5" /></button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </main>
         </div>
       </div>
