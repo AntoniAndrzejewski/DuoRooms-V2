@@ -43,8 +43,17 @@
           100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)); opacity: 0; }
         }
 
+        @keyframes progress {
+          0% { transform: scaleX(0); }
+          100% { transform: scaleX(1); }
+        }
+
         .animate-shatter {
           animation: shatter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .animate-progress {
+          animation: progress 1.5s linear infinite;
         }
 
         .particle {

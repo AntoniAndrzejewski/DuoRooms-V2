@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { RoomState, User, ActivityType, Message, RoomTheme } from '../types';
-import { Share2, Send, Paperclip, Gamepad2, Users, Settings, LogOut, MessageSquare, Crown, ShieldAlert, X, Check, Search, MonitorPlay } from 'lucide-react';
+import { Share2, Send, Paperclip, Gamepad2, Users, Settings, LogOut, MessageSquare, Crown, ShieldAlert, X, Check, Search, MonitorPlay, Scissors, Radio } from 'lucide-react';
 import ChessGame from './games/ChessGame';
+import RPSGame from './games/RPSGame';
+import RadioPlayer from './media/RadioPlayer';
 
 interface ChatSectionProps {
   t: any;
@@ -206,7 +208,7 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
       </header>
 
       <div className="flex flex-1 relative overflow-hidden">
-        {/* Navigation Sidebar: Remains on the leftmost */}
+        {/* Navigation Sidebar */}
         <nav className="w-20 border-r border-black/5 flex flex-col items-center py-8 gap-8 bg-black/5 z-10">
           <button onClick={() => setActiveTab('main')} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${activeTab === 'main' ? 'bg-white shadow-xl text-slate-900 scale-110' : 'text-slate-500'}`}><Gamepad2 className="w-7 h-7" /></button>
           <button onClick={() => setActiveTab('chat')} className={`lg:hidden w-12 h-12 rounded-2xl flex items-center justify-center transition-all relative ${activeTab === 'chat' ? 'bg-white shadow-xl text-slate-900 scale-110' : 'text-slate-500'}`}><MessageSquare className="w-7 h-7" />{room.messages.length > 0 && activeTab !== 'chat' && <div className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-100"></div>}</button>
@@ -215,7 +217,7 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
         </nav>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Persistent Chat Sidebar: Now on the LEFT side of the main content */}
+          {/* Chat Sidebar */}
           <aside className={`flex-col bg-white/30 backdrop-blur-sm border-r border-black/5 transition-all duration-300 w-full lg:w-96 ${activeTab === 'chat' ? 'flex' : 'hidden lg:flex'}`}>
             <ChatSection 
               t={t} 
@@ -229,7 +231,7 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
             />
           </aside>
 
-          {/* Main Activity Area: On the RIGHT side */}
+          {/* Main Content Area */}
           <main className={`flex-1 flex flex-col min-0 bg-transparent relative overflow-y-auto ${activeTab === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
             {activeTab !== 'participants' ? (
               <div className="flex-1 flex flex-col animate-in fade-in duration-500">
@@ -239,12 +241,18 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
                           <h2 className="text-3xl md:text-4xl font-black opacity-80">{t.activities}</h2>
                           <p className="text-sm font-medium opacity-50">Collaborate or compete in real-time</p>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
-                          {[{ id: ActivityType.CHESS, label: t.chess, icon: '♟️', color: 'bg-amber-500' }, { id: ActivityType.TIC_TAC_TOE, label: t.tictactoe, icon: '❌', color: 'bg-blue-500' }, { id: ActivityType.YOUTUBE, label: t.youtube, icon: '📺', color: 'bg-red-500' }].map((act) => (
-                              <button key={act.id} onClick={() => setActivity(act.id as ActivityType)} className={`group relative p-10 rounded-[40px] ${act.color} text-white shadow-2xl transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center`}>
-                                  <span className="text-6xl mb-4 group-hover:rotate-12 transition-transform">{act.icon}</span>
-                                  <span className="text-xl font-black uppercase tracking-widest">{act.label}</span>
-                                  {!isHost && <div className="absolute inset-0 bg-black/40 rounded-[40px] flex items-center justify-center cursor-not-allowed">Host Only</div>}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 w-full max-w-6xl">
+                          {[
+                            { id: ActivityType.CHESS, label: t.chess, icon: '♟️', color: 'bg-amber-500' }, 
+                            { id: ActivityType.ROCK_PAPER_SCISSORS, label: t.rps, icon: '✊', color: 'bg-indigo-500' },
+                            { id: ActivityType.RADIO, label: t.radio, icon: '📻', color: 'bg-emerald-500' },
+                            { id: ActivityType.TIC_TAC_TOE, label: t.tictactoe, icon: '❌', color: 'bg-blue-500' }, 
+                            { id: ActivityType.YOUTUBE, label: t.youtube, icon: '📺', color: 'bg-red-500' }
+                          ].map((act) => (
+                              <button key={act.id} onClick={() => setActivity(act.id as ActivityType)} className={`group relative p-8 rounded-[40px] ${act.color} text-white shadow-2xl transition-all transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center text-center h-48`}>
+                                  <span className="text-5xl mb-3 group-hover:rotate-12 transition-transform">{act.icon}</span>
+                                  <span className="text-sm font-black uppercase tracking-widest leading-tight">{act.label}</span>
+                                  {!isHost && <div className="absolute inset-0 bg-black/40 rounded-[40px] flex items-center justify-center cursor-not-allowed text-xs font-bold">Host Only</div>}
                               </button>
                           ))}
                       </div>
@@ -252,11 +260,25 @@ const Room: React.FC<RoomProps> = ({ t, room, user, setRoom, onLeave }) => {
                 ) : room.currentActivity === ActivityType.CHESS ? (
                   <ChessGame 
                     t={t} 
+                    onClose={() => setActivity(ActivityType.LOBBY)}
                     isOwner={isHost} 
                     theme={room.theme} 
-                    onClose={() => setActivity(ActivityType.LOBBY)}
                     player1={user}
                     player2={room.participants.find(p => p.id !== user.id)}
+                  />
+                ) : room.currentActivity === ActivityType.ROCK_PAPER_SCISSORS ? (
+                  <RPSGame 
+                    t={t}
+                    onClose={() => setActivity(ActivityType.LOBBY)}
+                    theme={room.theme}
+                    player1={user}
+                    player2={room.participants.find(p => p.id !== user.id)}
+                  />
+                ) : room.currentActivity === ActivityType.RADIO ? (
+                  <RadioPlayer 
+                    t={t}
+                    onClose={() => setActivity(ActivityType.LOBBY)}
+                    theme={room.theme}
                   />
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center opacity-40">

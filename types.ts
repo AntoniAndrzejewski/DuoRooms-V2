@@ -16,6 +16,8 @@ export enum RoomTheme {
 export enum ActivityType {
   CHESS = 'chess',
   TIC_TAC_TOE = 'tictactoe',
+  ROCK_PAPER_SCISSORS = 'rps',
+  RADIO = 'radio',
   YOUTUBE = 'youtube',
   LOBBY = 'lobby'
 }
